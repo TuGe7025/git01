@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <title>一个娱乐的聊天室</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html,body { font: 13px Helvetica, Arial; width:100%;height:100%;}
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages {  margin: 0; padding: 0; overflow-y: scroll;width:80%;position:fixed;height:80%;}
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      ul{list-style-type: none;}
+
+      /* -- */
+      .box{position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;width:100%;height:100%;padding:50px;font:700 24px/2 "";color:aqua;background:rgba(0, 0, 0, .6)}
+      /* .max-box{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(000,000,000,.6);z-index: 999;} */
+      #name{width:30%;border:0;font:700 24px/30px "";color:#fff;background:#000}
+      #btn-name{width:20%;border:0;font:700 24px/30px "";color:#333; cursor: pointer;}
+      .users{position:fixed;right:0;top:0;width:20%;padding:20px;overflow-y:scroll;height:80%;}
+
+      .maxbox{display:none;}
+    </style>
+  </head>
+  <body>
+    <div class="maxbox">
+      <ul id="messages"></ul>
+      <form action="" class="f1">
+        <input id="m" autocomplete="off" /><button>Send</button>
+      </form>
+      <div class="users">
+        <h3>用户状态---在线人数：<b class="Num" style="color:red;">1</b></h3>
+        <ul id="users_data">
+        </ul>
+      </div>
+    </div>
+    <div class="box">
+        <h3>您进入了一个聊天室</h3>
+        <input type="text" name="name" placeholder="请输入您的昵称" id="name">
+        <button id="btn-name" >提交</button>
+    </div>
+      <!-- </div> -->
+  </body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+    $(function () {
+        var socket = io();
+        $('.f1').submit(function(e){
+            e.preventDefault(); // 阻止表单提交事件刷新页面
+            socket.emit('message', { val:$('#m').val() }); //发送消息
+            // socket.emit('log',name);
+            $('#m').val('');
+            return false; 
+        });
+        //点击提交后隐藏表单框
+        $('#btn-name').on('click',function(){
+          $('.box').hide();
+          $('.maxbox').show();
+          // console.log($('#name').val());
+          //将用户输入的用户名发送给服务器
+          socket.emit('login', { username: '用户名:' + $('#name').val()  })
+        });
+          // 监听服务器返回的数据
+          socket.on('message', function(msg){ 
+            // console.log(msg)
+              $('#messages').append($('<li>').text("   "+msg));
+          });
+          socket.on('login', (date) => {
+            $('#messages').append($('<li>').text(date.username+date.msg));
+          });
+          socket.on('update', (date) => {
+            $('.Num').text(date.onlineCount);
+          })
+
+        socket.on('logout', (date) => {  //监听服务器发来的自定义事件
+          $('#messages').append($('<li>').text(date.username+date.msg));
+        // message.innerHTML = `${data.username}: ${data.msg}`;  //显示客户端id,和发来的数据
+        })
+
+        socket.on('update', (date) => {  //监听服务器发来的自定义事件
+          $('.Num').text(date.onlineCount);
+          $('#users_data').text("");
+          // console.log(date.onlineUserName);
+          date.onlineUserName.forEach(username => {
+            // console.log(username);
+            $('#users_data').append($('<li>').text(username));
+          })
+        })
+    });
+    </script>
+</html>
